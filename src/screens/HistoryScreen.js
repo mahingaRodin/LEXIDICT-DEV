@@ -1,12 +1,15 @@
-import React from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BouncePressable from '../components/BouncePressable';
 import EmptyState from '../components/EmptyState';
 import WordListItem from '../components/WordListItem';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../theme/ThemeContext';
+import { confirmClearAll, confirmDeleteWord } from '../utils/confirm';
+import { capitalize } from '../utils/constants';
 
 export default function HistoryScreen() {
   const navigation = useNavigation();
@@ -14,24 +17,41 @@ export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const { history, clearHistory, removeFromHistory } = useApp();
 
-  const confirmClear = () => {
-    Alert.alert('Clear history?', 'This removes all recent searches.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: clearHistory },
-    ]);
-  };
+  const openWord = useCallback(
+    (word) => navigation.navigate('WordDetail', { word }),
+    [navigation]
+  );
+
+  const confirmRemoveOne = useCallback(
+    (word) => {
+      confirmDeleteWord(word, {
+        title: 'Remove from history?',
+        message: `Remove "${capitalize(word)}" from your search history?`,
+        onConfirm: () => removeFromHistory(word),
+      });
+    },
+    [removeFromHistory]
+  );
+
+  const confirmRemoveAll = useCallback(() => {
+    confirmClearAll({
+      title: 'Clear all history?',
+      message: `This will remove all ${history.length} recent search${history.length === 1 ? '' : 'es'}. This cannot be undone.`,
+      onConfirm: clearHistory,
+    });
+  }, [clearHistory, history.length]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.bg, paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.openDrawer()}>
+        <BouncePressable onPress={() => navigation.openDrawer()}>
           <Ionicons name="menu" size={26} color={theme.colors.text} />
-        </Pressable>
+        </BouncePressable>
         <Text style={[styles.title, { color: theme.colors.text }]}>Search History</Text>
         {history.length > 0 ? (
-          <Pressable onPress={confirmClear}>
+          <BouncePressable onPress={confirmRemoveAll} hitSlop={8}>
             <Ionicons name="trash-outline" size={22} color={theme.colors.danger} />
-          </Pressable>
+          </BouncePressable>
         ) : (
           <View style={{ width: 22 }} />
         )}
@@ -52,8 +72,8 @@ export default function HistoryScreen() {
             <WordListItem
               word={item.word}
               ts={item.ts}
-              onPress={(w) => navigation.navigate('WordDetail', { word: w })}
-              onRemove={removeFromHistory}
+              onPress={openWord}
+              onDelete={confirmRemoveOne}
             />
           )}
         />

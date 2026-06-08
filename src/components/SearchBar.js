@@ -24,6 +24,7 @@ export default function SearchBar({
   shakeTrigger = 0,
   hintMessage = '',
   hintVisible = false,
+  suggestionsVisible = false,
 }) {
   const { theme } = useTheme();
   const inputRef = useRef(null);
@@ -48,7 +49,14 @@ export default function SearchBar({
         <View
           style={[
             styles.row,
-            { backgroundColor: theme.colors.card, borderColor: hintVisible ? theme.colors.warning : 'transparent' },
+            {
+              backgroundColor: theme.colors.card,
+              borderColor: hintVisible
+                ? theme.colors.warning
+                : suggestionsVisible
+                  ? theme.colors.primary
+                  : 'transparent',
+            },
             theme.shadow.card,
             hintVisible && styles.rowWarn,
           ]}

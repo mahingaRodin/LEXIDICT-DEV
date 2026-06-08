@@ -8,7 +8,7 @@ import Animated, {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export default function BouncePressable({ children, onPress, style, disabled }) {
+export default function BouncePressable({ children, onPress, style, disabled, ...rest }) {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -17,6 +17,7 @@ export default function BouncePressable({ children, onPress, style, disabled }) 
 
   return (
     <AnimatedPressable
+      {...rest}
       disabled={disabled}
       onPress={onPress}
       onPressIn={() => {

@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import BouncePressable from './BouncePressable';
 import { useTheme } from '../theme/ThemeContext';
 import { capitalize, relativeTime } from '../utils/constants';
 
@@ -10,10 +11,8 @@ export default function WordListItem({
   subtitle,
   ts,
   onPress,
-  onRemove,
+  onDelete,
   showStar,
-  starred,
-  onToggleStar,
 }) {
   const { theme } = useTheme();
 
@@ -22,17 +21,23 @@ export default function WordListItem({
     onPress?.(word);
   };
 
+  const handleDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onDelete?.(word);
+  };
+
   return (
-    <Pressable
-      onPress={handlePress}
-      style={({ pressed }) => [
+    <View
+      style={[
         styles.row,
         { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
-        pressed && { opacity: 0.85 },
       ]}
     >
       <View style={[styles.dot, { backgroundColor: theme.colors.accent }]} />
-      <View style={styles.body}>
+      <Pressable
+        onPress={handlePress}
+        style={({ pressed }) => [styles.body, pressed && { opacity: 0.85 }]}
+      >
         <Text style={[styles.word, { color: theme.colors.text }]}>{capitalize(word)}</Text>
         {subtitle ? (
           <Text style={[styles.sub, { color: theme.colors.subtext }]} numberOfLines={1}>
@@ -41,29 +46,17 @@ export default function WordListItem({
         ) : ts ? (
           <Text style={[styles.sub, { color: theme.colors.muted }]}>{relativeTime(ts)}</Text>
         ) : null}
-      </View>
+      </Pressable>
       {showStar && (
-        <Pressable
-          onPress={(e) => {
-            e.stopPropagation?.();
-            onToggleStar?.();
-          }}
-          hitSlop={10}
-        >
-          <Ionicons
-            name={starred ? 'star' : 'star-outline'}
-            size={22}
-            color={starred ? theme.colors.star : theme.colors.muted}
-          />
-        </Pressable>
+        <Ionicons name="star" size={20} color={theme.colors.star} style={styles.star} />
       )}
-      {onRemove && (
-        <Pressable onPress={() => onRemove(word)} hitSlop={10}>
-          <Ionicons name="close" size={20} color={theme.colors.muted} />
-        </Pressable>
+      {onDelete && (
+        <BouncePressable onPress={handleDelete} style={styles.deleteBtn} hitSlop={6}>
+          <Ionicons name="trash-outline" size={20} color={theme.colors.danger} />
+        </BouncePressable>
       )}
       <Ionicons name="chevron-forward" size={18} color={theme.colors.muted} />
-    </Pressable>
+    </View>
   );
 }
 
@@ -78,7 +71,15 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  body: { flex: 1 },
+  body: { flex: 1, paddingVertical: 2 },
   word: { fontSize: 17, fontWeight: '700' },
   sub: { fontSize: 13, marginTop: 2 },
+  star: { marginRight: 2 },
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+  },
 });

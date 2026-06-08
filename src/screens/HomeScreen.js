@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Keyboard,
   ScrollView,
@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchBar from '../components/SearchBar';
+import SearchSuggestions from '../components/SearchSuggestions';
 import StatCard from '../components/StatCard';
 import FadeInView from '../components/FadeInView';
 import BouncePressable from '../components/BouncePressable';
@@ -19,13 +20,14 @@ import Logo from '../components/Logo';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { greeting, SUGGESTED_WORDS, wordOfTheDay, capitalize } from '../utils/constants';
+import { getWordSuggestions } from '../utils/wordSuggestions';
 
 const EMPTY_HINT = 'Type a word first — the dictionary is listening! 👀';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const { theme } = useTheme();
-  const { stats } = useApp();
+  const { stats, history, favorites } = useApp();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [shakeKey, setShakeKey] = useState(0);
@@ -60,6 +62,21 @@ export default function HomeScreen() {
     setQuery(text);
     if (text.trim()) setHintVisible(false);
   }, []);
+
+  const suggestions = useMemo(
+    () => getWordSuggestions(query, { history, favorites }),
+    [query, history, favorites]
+  );
+
+  const showSuggestions = query.trim().length > 0 && suggestions.length > 0;
+
+  const handleSelectSuggestion = useCallback(
+    (word) => {
+      setQuery(word);
+      goSearch(word);
+    },
+    [goSearch]
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
@@ -104,6 +121,13 @@ export default function HomeScreen() {
             shakeTrigger={shakeKey}
             hintMessage={EMPTY_HINT}
             hintVisible={hintVisible}
+            suggestionsVisible={showSuggestions}
+          />
+          <SearchSuggestions
+            suggestions={suggestions}
+            query={query}
+            visible={showSuggestions}
+            onSelect={handleSelectSuggestion}
           />
         </FadeInView>
 

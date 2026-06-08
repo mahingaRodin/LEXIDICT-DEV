@@ -120,6 +120,24 @@ export function AppProvider({ children }) {
     [persist]
   );
 
+  const removeFavorite = useCallback(
+    (word) => {
+      const w = (word || '').trim().toLowerCase();
+      if (!w) return;
+      setFavorites((prev) => {
+        const next = prev.filter((f) => f.word !== w);
+        persist(FAVORITES_KEY, next);
+        return next;
+      });
+    },
+    [persist]
+  );
+
+  const clearFavorites = useCallback(() => {
+    setFavorites([]);
+    persist(FAVORITES_KEY, []);
+  }, [persist]);
+
   const stats = useMemo(
     () => ({
       wordsLearned: history.length,
@@ -140,6 +158,8 @@ export function AppProvider({ children }) {
       clearHistory,
       isFavorite,
       toggleFavorite,
+      removeFavorite,
+      clearFavorites,
     }),
     [
       hydrated,
@@ -151,6 +171,8 @@ export function AppProvider({ children }) {
       clearHistory,
       isFavorite,
       toggleFavorite,
+      removeFavorite,
+      clearFavorites,
     ]
   );
 
