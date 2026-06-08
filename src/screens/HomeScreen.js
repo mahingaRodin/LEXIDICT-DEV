@@ -1,7 +1,6 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Keyboard,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,10 +13,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchBar from '../components/SearchBar';
 import StatCard from '../components/StatCard';
 import FadeInView from '../components/FadeInView';
+import BouncePressable from '../components/BouncePressable';
+import FloatingEmoji from '../components/FloatingEmoji';
 import Logo from '../components/Logo';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { greeting, SUGGESTED_WORDS, wordOfTheDay, capitalize } from '../utils/constants';
+
+const EMPTY_HINT = 'Type a word first — the dictionary is listening! 👀';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -25,28 +28,52 @@ export default function HomeScreen() {
   const { stats } = useApp();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
+  const [shakeKey, setShakeKey] = useState(0);
+  const [hintVisible, setHintVisible] = useState(false);
   const greet = greeting();
   const wotd = wordOfTheDay();
 
+  useEffect(() => {
+    if (!hintVisible) return;
+    const t = setTimeout(() => setHintVisible(false), 4000);
+    return () => clearTimeout(t);
+  }, [hintVisible]);
+
   const goSearch = useCallback(
     (word) => {
-      const w = (word || query).trim();
-      if (!w) return;
+      const w = (typeof word === 'string' ? word : query).trim();
+      if (!w) return false;
       Keyboard.dismiss();
+      setHintVisible(false);
       navigation.navigate('WordDetail', { word: w });
+      return true;
     },
     [navigation, query]
   );
 
+  const handleEmptySubmit = useCallback(() => {
+    setShakeKey((k) => k + 1);
+    setHintVisible(true);
+  }, []);
+
+  const handleQueryChange = useCallback((text) => {
+    setQuery(text);
+    if (text.trim()) setHintVisible(false);
+  }, []);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+      <FloatingEmoji emoji="📚" style={{ top: insets.top + 90, right: 28 }} delay={200} />
+      <FloatingEmoji emoji="✨" style={{ top: insets.top + 160, left: 24 }} delay={600} size={18} />
+      <FloatingEmoji emoji="🔤" style={{ bottom: 120, right: 36 }} delay={1000} size={20} />
+
       <LinearGradient
         colors={theme.gradient.brand}
         style={[styles.header, { paddingTop: insets.top + 12 }]}
       >
-        <Pressable onPress={() => navigation.openDrawer()} style={styles.menuBtn}>
+        <BouncePressable onPress={() => navigation.openDrawer()} style={styles.menuBtn}>
           <Ionicons name="menu" size={26} color="#fff" />
-        </Pressable>
+        </BouncePressable>
         <View style={styles.headerCenter}>
           <Logo size={36} />
           <Text style={styles.brand}>LexiDict</Text>
@@ -69,7 +96,15 @@ export default function HomeScreen() {
         </FadeInView>
 
         <FadeInView delay={80} style={{ marginTop: 20 }}>
-          <SearchBar value={query} onChangeText={setQuery} onSubmit={() => goSearch()} />
+          <SearchBar
+            value={query}
+            onChangeText={handleQueryChange}
+            onSubmit={() => goSearch()}
+            onEmptySubmit={handleEmptySubmit}
+            shakeTrigger={shakeKey}
+            hintMessage={EMPTY_HINT}
+            hintVisible={hintVisible}
+          />
         </FadeInView>
 
         <View style={styles.statsRow}>
@@ -91,7 +126,7 @@ export default function HomeScreen() {
         </View>
 
         <FadeInView delay={300}>
-          <Pressable
+          <BouncePressable
             onPress={() => goSearch(wotd)}
             style={[styles.wotd, { backgroundColor: theme.colors.card }, theme.shadow.card]}
           >
@@ -102,7 +137,7 @@ export default function HomeScreen() {
               {capitalize(wotd)}
             </Text>
             <Text style={[styles.wotdHint, { color: theme.colors.subtext }]}>
-              Tap to discover its meaning
+              Tap to discover its meaning ✨
             </Text>
             <Ionicons
               name="arrow-forward-circle"
@@ -110,22 +145,23 @@ export default function HomeScreen() {
               color={theme.colors.accent}
               style={styles.wotdIcon}
             />
-          </Pressable>
+          </BouncePressable>
         </FadeInView>
 
         <FadeInView delay={380}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Try these</Text>
           <View style={styles.chips}>
-            {SUGGESTED_WORDS.map((w) => (
-              <Pressable
-                key={w}
-                onPress={() => goSearch(w)}
-                style={[styles.chip, { backgroundColor: theme.colors.chip }]}
-              >
-                <Text style={[styles.chipText, { color: theme.colors.chipText }]}>
-                  {capitalize(w)}
-                </Text>
-              </Pressable>
+            {SUGGESTED_WORDS.map((w, i) => (
+              <FadeInView key={w} delay={420 + i * 50} from={8} spring>
+                <BouncePressable
+                  onPress={() => goSearch(w)}
+                  style={[styles.chip, { backgroundColor: theme.colors.chip }]}
+                >
+                  <Text style={[styles.chipText, { color: theme.colors.chipText }]}>
+                    {capitalize(w)}
+                  </Text>
+                </BouncePressable>
+              </FadeInView>
             ))}
           </View>
         </FadeInView>

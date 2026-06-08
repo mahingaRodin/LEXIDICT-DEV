@@ -38,16 +38,21 @@ export default function SplashScreen({ onFinish }) {
 
   const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value }));
 
-  const bar = (sv, width) =>
-    useAnimatedStyle(() => ({
-      opacity: sv.value,
-      transform: [{ scaleX: sv.value }],
-      width,
-    }));
-
-  const bar1 = bar(line1, 120);
-  const bar2 = bar(line2, 120);
-  const bar3 = bar(line3, 80);
+  const bar1 = useAnimatedStyle(() => ({
+    opacity: line1.value,
+    transform: [{ scaleX: line1.value }],
+    width: 120,
+  }));
+  const bar2 = useAnimatedStyle(() => ({
+    opacity: line2.value,
+    transform: [{ scaleX: line2.value }],
+    width: 120,
+  }));
+  const bar3 = useAnimatedStyle(() => ({
+    opacity: line3.value,
+    transform: [{ scaleX: line3.value }],
+    width: 80,
+  }));
 
   return (
     <LinearGradient colors={['#6366F1', '#4F46E5', '#0EA5E9']} style={styles.container}>

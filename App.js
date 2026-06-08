@@ -1,20 +1,48 @@
+import 'react-native-gesture-handler';
+import React, { useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { AppProvider } from './src/context/AppContext';
+import RootNavigator from './src/navigation/RootNavigator';
+import SplashScreen from './src/screens/SplashScreen';
 
-export default function App() {
+function AppShell() {
+  const { theme, hydrated } = useTheme();
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (!hydrated) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.bg }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <StatusBar style={theme.isDark ? 'light' : 'dark'} />
+      <RootNavigator />
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default function App() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <AppProvider>
+            <AppShell />
+          </AppProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+}

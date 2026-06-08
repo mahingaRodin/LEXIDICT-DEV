@@ -8,6 +8,8 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import ShakeView from './ShakeView';
+import InlineHint from './InlineHint';
 import { useTheme } from '../theme/ThemeContext';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -16,8 +18,12 @@ export default function SearchBar({
   value,
   onChangeText,
   onSubmit,
+  onEmptySubmit,
   placeholder = 'Search a word…',
   autoFocus = false,
+  shakeTrigger = 0,
+  hintMessage = '',
+  hintVisible = false,
 }) {
   const { theme } = useTheme();
   const inputRef = useRef(null);
@@ -26,45 +32,65 @@ export default function SearchBar({
   const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const handleSubmit = () => {
+    const trimmed = (value ?? '').trim();
+    if (!trimmed) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      onEmptySubmit?.();
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onSubmit?.();
   };
 
   return (
-    <View style={[styles.row, { backgroundColor: theme.colors.card }, theme.shadow.card]}>
-      <Ionicons name="search" size={20} color={theme.colors.muted} style={styles.icon} />
-      <TextInput
-        ref={inputRef}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={theme.colors.muted}
-        style={[styles.input, { color: theme.colors.text }]}
-        returnKeyType="search"
-        onSubmitEditing={handleSubmit}
-        autoCapitalize="none"
-        autoCorrect={false}
-        autoFocus={autoFocus}
-      />
-      {value?.length > 0 && (
-        <Pressable onPress={() => onChangeText('')} hitSlop={8}>
-          <Ionicons name="close-circle" size={20} color={theme.colors.muted} />
-        </Pressable>
-      )}
-      <AnimatedPressable
-        onPressIn={() => {
-          scale.value = withSpring(0.92);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
-        onPress={handleSubmit}
-        style={[styles.btnWrap, btnStyle]}
-      >
-        <LinearGradient colors={theme.gradient.cyan} style={styles.btn}>
-          <Ionicons name="arrow-forward" size={18} color="#fff" />
-        </LinearGradient>
-      </AnimatedPressable>
+    <View>
+      <ShakeView trigger={shakeTrigger}>
+        <View
+          style={[
+            styles.row,
+            { backgroundColor: theme.colors.card, borderColor: hintVisible ? theme.colors.warning : 'transparent' },
+            theme.shadow.card,
+            hintVisible && styles.rowWarn,
+          ]}
+        >
+          <Ionicons name="search" size={20} color={hintVisible ? theme.colors.warning : theme.colors.muted} style={styles.icon} />
+          <TextInput
+            ref={inputRef}
+            value={value}
+            onChangeText={(t) => {
+              onChangeText(t);
+            }}
+            placeholder={placeholder}
+            placeholderTextColor={theme.colors.muted}
+            style={[styles.input, { color: theme.colors.text }]}
+            returnKeyType="search"
+            onSubmitEditing={handleSubmit}
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoFocus={autoFocus}
+          />
+          {value?.length > 0 && (
+            <Pressable onPress={() => onChangeText('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={20} color={theme.colors.muted} />
+            </Pressable>
+          )}
+          <AnimatedPressable
+            onPressIn={() => {
+              scale.value = withSpring(0.92);
+            }}
+            onPressOut={() => {
+              scale.value = withSpring(1);
+            }}
+            onPress={handleSubmit}
+            style={[styles.btnWrap, btnStyle]}
+          >
+            <LinearGradient colors={theme.gradient.cyan} style={styles.btn}>
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            </LinearGradient>
+          </AnimatedPressable>
+        </View>
+      </ShakeView>
+      <InlineHint message={hintMessage} type="warning" visible={hintVisible} />
     </View>
   );
 }
@@ -78,7 +104,9 @@ const styles = StyleSheet.create({
     paddingRight: 6,
     paddingVertical: 6,
     minHeight: 54,
+    borderWidth: 1.5,
   },
+  rowWarn: {},
   icon: { marginRight: 8 },
   input: { flex: 1, fontSize: 16, paddingVertical: 8 },
   btnWrap: { marginLeft: 8 },

@@ -25,7 +25,7 @@ export default function CustomDrawerContent(props) {
 
   const openWord = (word) => {
     navigation.closeDrawer();
-    navigation.navigate('WordDetail', { word });
+    navigation.getParent()?.navigate('WordDetail', { word });
   };
 
   const goTo = (item) => {

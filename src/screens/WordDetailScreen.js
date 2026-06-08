@@ -1,6 +1,5 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,16 +10,28 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+} from 'react-native-reanimated';
 import AudioButton from '../components/AudioButton';
+import AnimatedToast from '../components/AnimatedToast';
 import ErrorState from '../components/ErrorState';
 import FadeInView from '../components/FadeInView';
+import BouncePressable from '../components/BouncePressable';
 import PartOfSpeechChip from '../components/PartOfSpeechChip';
 import { WordDetailSkeleton } from '../components/Skeleton';
+import CelebrationBurst from '../components/CelebrationBurst';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { useDictionarySearch } from '../hooks/useDictionarySearch';
+import { useToast } from '../hooks/useToast';
 import { ErrorKind } from '../api/dictionaryApi';
 import { FALLBACK_SUGGESTIONS, capitalize } from '../utils/constants';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function WordDetailScreen() {
   const navigation = useNavigation();
@@ -28,11 +39,19 @@ export default function WordDetailScreen() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const { addToHistory, isFavorite, toggleFavorite } = useApp();
-  const wordParam = route.params?.word || '';
+  const { toast, show, hide, visible } = useToast();
+  const [activeWord, setActiveWord] = useState(route.params?.word || '');
+  const [celebrateKey, setCelebrateKey] = useState(0);
+  const starScale = useSharedValue(1);
+
+  useEffect(() => {
+    if (route.params?.word) setActiveWord(route.params.word);
+  }, [route.params?.word]);
 
   const onSuccess = useCallback(
     (data) => {
       addToHistory(data.word);
+      setCelebrateKey((k) => k + 1);
     },
     [addToHistory]
   );
@@ -40,13 +59,20 @@ export default function WordDetailScreen() {
   const { data, error, isLoading, search } = useDictionarySearch({ onSuccess });
 
   useEffect(() => {
-    if (wordParam) search(wordParam).catch(() => {});
-  }, [wordParam, search]);
+    if (activeWord) search(activeWord).catch(() => {});
+  }, [activeWord, search]);
 
-  const handleRetry = (w) => {
-    const next = w || wordParam;
-    if (next) search(next).catch(() => {});
-  };
+  const handleRetry = useCallback(
+    (w) => {
+      const next = (typeof w === 'string' ? w : activeWord).trim();
+      if (!next) return;
+      setActiveWord(next);
+      if (navigation.setParams) {
+        navigation.setParams({ word: next });
+      }
+    },
+    [activeWord, navigation]
+  );
 
   const favSnapshot = data
     ? {
@@ -59,32 +85,56 @@ export default function WordDetailScreen() {
 
   const starred = data ? isFavorite(data.word) : false;
 
+  const starAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: starScale.value }],
+  }));
+
+  const handleFavorite = () => {
+    if (!favSnapshot) return;
+    const added = toggleFavorite(favSnapshot);
+    starScale.value = withSequence(
+      withSpring(1.45, { damping: 6, stiffness: 280 }),
+      withSpring(1, { damping: 8, stiffness: 200 })
+    );
+    if (added) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      show(`"${capitalize(data.word)}" saved to favorites!`, 'success');
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      show(`Removed "${capitalize(data.word)}" from favorites`, 'info');
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.bg }]}>
+      <AnimatedToast
+        message={toast?.message}
+        type={toast?.type}
+        visible={visible}
+        onDismiss={hide}
+        topOffset={insets.top + 12}
+      />
+
       <View style={[styles.topBar, { paddingTop: insets.top + 8, borderBottomColor: theme.colors.border }]}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+        <BouncePressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-        </Pressable>
+        </BouncePressable>
         <Text style={[styles.topTitle, { color: theme.colors.text }]} numberOfLines={1}>
-          {capitalize(wordParam)}
+          {capitalize(activeWord)}
         </Text>
         {data && (
-          <Pressable
-            onPress={() => {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              toggleFavorite(favSnapshot);
-            }}
-            style={styles.backBtn}
-          >
+          <AnimatedPressable onPress={handleFavorite} style={[styles.backBtn, starAnimStyle]}>
             <Ionicons
               name={starred ? 'star' : 'star-outline'}
               size={24}
               color={starred ? theme.colors.star : theme.colors.text}
             />
-          </Pressable>
+          </AnimatedPressable>
         )}
         {!data && <View style={styles.backBtn} />}
       </View>
+
+      <CelebrationBurst trigger={celebrateKey} />
 
       {isLoading && <WordDetailSkeleton />}
 
@@ -98,7 +148,7 @@ export default function WordDetailScreen() {
 
       {!isLoading && data && (
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <FadeInView>
+          <FadeInView spring>
             <View style={styles.headRow}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.word, { color: theme.colors.text }]}>
@@ -115,7 +165,7 @@ export default function WordDetailScreen() {
           </FadeInView>
 
           {data.origin && (
-            <FadeInView delay={60}>
+            <FadeInView delay={60} spring>
               <View style={[styles.originCard, { backgroundColor: theme.colors.quoteBg }]}>
                 <Ionicons name="leaf-outline" size={18} color={theme.colors.accent} />
                 <Text style={[styles.origin, { color: theme.colors.textSoft }]}>{data.origin}</Text>
@@ -127,21 +177,22 @@ export default function WordDetailScreen() {
             <FadeInView delay={100}>
               <Text style={[styles.section, { color: theme.colors.muted }]}>SYNONYMS</Text>
               <View style={styles.synRow}>
-                {data.synonyms.map((s) => (
-                  <Pressable
-                    key={s}
-                    onPress={() => navigation.push('WordDetail', { word: s })}
-                    style={[styles.synChip, { backgroundColor: theme.colors.chip }]}
-                  >
-                    <Text style={[styles.synText, { color: theme.colors.chipText }]}>{s}</Text>
-                  </Pressable>
+                {data.synonyms.map((s, i) => (
+                  <FadeInView key={s} delay={120 + i * 40} from={6} spring>
+                    <BouncePressable
+                      onPress={() => navigation.push('WordDetail', { word: s })}
+                      style={[styles.synChip, { backgroundColor: theme.colors.chip }]}
+                    >
+                      <Text style={[styles.synText, { color: theme.colors.chipText }]}>{s}</Text>
+                    </BouncePressable>
+                  </FadeInView>
                 ))}
               </View>
             </FadeInView>
           )}
 
           {data.meanings.map((meaning, mi) => (
-            <FadeInView key={`${meaning.partOfSpeech}-${mi}`} delay={140 + mi * 60}>
+            <FadeInView key={`${meaning.partOfSpeech}-${mi}`} delay={140 + mi * 60} spring>
               <View
                 style={[styles.meaningCard, { backgroundColor: theme.colors.card }, theme.shadow.card]}
               >
@@ -154,11 +205,13 @@ export default function WordDetailScreen() {
                         {def.definition}
                       </Text>
                       {def.example && (
-                        <View style={[styles.example, { backgroundColor: theme.colors.quoteBg }]}>
-                          <Text style={[styles.exampleText, { color: theme.colors.textSoft }]}>
-                            "{def.example}"
-                          </Text>
-                        </View>
+                        <FadeInView delay={80 + di * 30} from={6}>
+                          <View style={[styles.example, { backgroundColor: theme.colors.quoteBg }]}>
+                            <Text style={[styles.exampleText, { color: theme.colors.textSoft }]}>
+                              "{def.example}"
+                            </Text>
+                          </View>
+                        </FadeInView>
                       )}
                       {def.synonyms?.length > 0 && (
                         <Text style={[styles.miniSyn, { color: theme.colors.subtext }]}>
