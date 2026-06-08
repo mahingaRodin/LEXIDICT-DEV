@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LexiDict — Full Design Catalog</title>
+  <style>
+    :root {
+      --indigo: #4F46E5;
+      --indigo-light: #6366F1;
+      --cyan: #06B6D4;
+      --cyan-light: #22D3EE;
+      --bg: #E6E4EE;
+      --card: #F3F1F8;
+      --surface: #DFDCE8;
+      --primary: #5248D8;
+      --primary-soft: #D8D4F0;
+      --accent: #0E9AB5;
+      --accent-soft: #C8E8F0;
+      --text: #1E2433;
+      --subtext: #5A6478;
+      --muted: #7B8496;
+      --border: #D4D0DE;
+      --danger: #C93B3B;
+      --success: #15803D;
+      --warning: #B45309;
+      --star: #D97706;
+      --bg-dark: #0A0E1A;
+      --card-dark: #141B2E;
+      --text-dark: #F1F5F9;
+      --subtext-dark: #94A3B8;
+      --border-dark: #23304D;
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 22px;
+      --radius-pill: 999px;
+      --phone-w: 390px;
+      --phone-h: 844px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 40px;
+    }
+    h1.page-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #7B7FED, #3D9FD4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .page-sub { color: #94A3B8; margin-bottom: 40px; font-size: 15px; }
+    .section { margin-bottom: 64px; }
+    .section-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 24px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #334155;
+    }
+    .frames-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      align-items: flex-start;
+    }
+    .frame-wrap { display: flex; flex-direction: column; gap: 8px; }
+    .frame-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .phone {
+      width: var(--phone-w);
+      height: var(--phone-h);
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      border: 3px solid #334155;
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+    .phone.dark { background: var(--bg-dark); color: var(--text-dark); }
+    .gradient-brand {
+      background: linear-gradient(135deg, #7B7FED 0%, #5E58DC 50%, #3D9FD4 100%);
+    }
+    .gradient-brand-dark {
+      background: linear-gradient(135deg, #6366F1 0%, #4F46E5 50%, #0EA5E9 100%);
+    }
+    .gradient-cyan {
+      background: linear-gradient(135deg, #4DBED9 0%, #0E9AB5 100%);
+    }
+    .header {
+      padding: 52px 16px 20px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .header h2 { font-size: 22px; font-weight: 800; flex: 1; }
+    .icon-btn {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .content { padding: 0 16px 100px; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+    }
+    .phone.dark .card {
+      background: var(--card-dark);
+      border-color: var(--border-dark);
+    }
+    .search-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .search-btn {
+      width: 48px; height: 48px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #4DBED9, #0E9AB5);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 20px;
+    }
+    .hint {
+      background: #FEF3C7;
+      border: 1px solid #FCD34D;
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #92400E;
+      margin-top: 8px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .suggestions {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .suggestion-item {
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item mark { background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+    .stat-row { display: flex; gap: 8px; margin: 16px 0; }
+    .stat-card {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-num { font-size: 22px; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 11px; color: var(--subtext); font-weight: 600; margin-top: 2px; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip {
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .pos-chip {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .pos-noun { background: #D8D4F0; color: #4F46E5; }
+    .pos-verb { background: #C8E8F0; color: #0E7490; }
+    .word-title { font-size: 40px; font-weight: 800; color: var(--text); }
+    .phonetic { font-size: 15px; color: var(--subtext); margin: 4px 0 12px; }
+    .def-num { font-weight: 700; color: var(--primary); margin-right: 6px; }
+    .example {
+      background: var(--surface);
+      border-left: 3px solid var(--accent);
+      padding: 10px 12px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-style: italic;
+      font-size: 14px;
+      color: var(--subtext);
+      margin-top: 8px;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      margin-bottom: 8px;
+    }
+    .list-word { font-size: 16px; font-weight: 700; color: var(--text); }
+    .list-sub { font-size: 12px; color: var(--subtext); }
+    .empty {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--subtext);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .error-card {
+      text-align: center;
+      padding: 32px 20px;
+      background: var(--card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      margin-top: 40px;
+    }
+    .error-icon { font-size: 56px; margin-bottom: 16px; }
+    .retry-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 14px 28px;
+      border-radius: var(--radius-pill);
+      background: linear-gradient(135deg, #4DBED9, #0E9AB5);
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .tab-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 88%;
+      max-width: 340px;
+      height: 64px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+    .phone.dark .tab-bar { background: var(--card-dark); border-color: var(--border-dark); }
+    .tab-item { font-size: 22px; color: var(--muted); padding: 8px 12px; border-radius: 16px; }
+    .tab-item.active { color: var(--primary); background: var(--primary-soft); }
+    .phone.dark .tab-item.active { background: #1E2547; color: #6366F1; }
+    .toast {
+      position: absolute;
+      top: 60px;
+      left: 16px; right: 16px;
+      background: #15803D;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      display: flex; gap: 8px; align-items: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    .loader-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+      gap: 16px;
+    }
+    .loader-ring {
+      width: 56px; height: 56px;
+      border: 4px solid var(--primary-soft);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, #E8E6F0 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      border-radius: 8px;
+      height: 16px;
+      margin-bottom: 8px;
+    }
+    .drawer-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+    }
+    .drawer-panel {
+      width: 300px;
+      height: 100%;
+      background: var(--card);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+    }
+    .drawer-hero {
+      padding: 52px 20px 24px;
+      color: #fff;
+    }
+    .drawer-item {
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      display: flex; gap: 12px; align-items: center;
+    }
+    .drawer-item.active { color: var(--primary); background: var(--primary-soft); }
+    .splash-center {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-align: center;
+    }
+    .splash-logo {
+      width: 120px; height: 120px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+      margin-bottom: 24px;
+    }
+    .splash-title { font-size: 34px; font-weight: 800; }
+    .splash-bars { display: flex; gap: 6px; margin-top: 16px; }
+    .splash-bar { width: 32px; height: 4px; background: #fff; border-radius: 2px; }
+    .comp-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 16px;
+      background: var(--bg);
+      border-radius: var(--radius-lg);
+      width: 800px;
+    }
+    .comp-tile {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+    }
+    .comp-name { font-size: 11px; font-weight: 700; color: var(--subtext); margin-top: 8px; text-transform: uppercase; }
+    .token-swatch {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      margin: 0 auto 4px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .audio-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: var(--radius-pill);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .greeting { font-size: 30px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+    .greeting-sub { font-size: 15px; color: var(--subtext); margin-bottom: 16px; }
+    .tip-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 10px;
+      display: flex; gap: 12px;
+    }
+    .tip-icon { font-size: 28px; }
+    .tip-title { font-weight: 700; font-size: 15px; color: var(--text); }
+    .tip-body { font-size: 13px; color: var(--subtext); margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <h1 class="page-title">LexiDict — Full Design Catalog</h1>
+  <p class="page-sub">LexiTech Solutions Ltd · Import via html.to.design · Frame size 390×844 · See figma-handoff.md</p>
+
+  <!-- DESIGN SYSTEM -->
+  <section class="section" id="design-system">
+    <h2 class="section-title">01 — Design System Tokens</h2>
+    <div class="comp-grid">
+      <div class="comp-tile"><div class="token-swatch" style="background:#5248D8"></div><div class="comp-name">Primary</div></div>
+      <div class="comp-tile"><div class="token-swatch" style="background:#0E9AB5"></div><div class="comp-name">Accent / Cyan</div></div>
+      <div class="comp-tile"><div class="token-swatch" style="background:#E6E4EE"></div><div class="comp-name">BG Light</div></div>
+      <div class="comp-tile"><div class="token-swatch" style="background:#F3F1F8"></div><div class="comp-name">Card Light</div></div>
+      <div class="comp-tile"><div class="token-swatch" style="background:#0A0E1A"></div><div class="comp-name">BG Dark</div></div>
+      <div class="comp-tile"><div class="token-swatch" style="background:#141B2E"></div><div class="comp-name">Card Dark</div></div>
+      <div class="comp-tile"><div class="token-swatch" style="background:linear-gradient(135deg,#7B7FED,#3D9FD4)"></div><div class="comp-name">Brand Gradient</div></div>
+      <div class="comp-tile"><div class="token-swatch" style="background:linear-gradient(135deg,#4DBED9,#0E9AB5)"></div><div class="comp-name">Cyan CTA</div></div>
+      <div class="comp-tile"><div style="font-size:40px;font-weight:800;color:#1E2433">Aa</div><div class="comp-name">H1 40px</div></div>
+    </div>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section class="section" id="components">
+    <h2 class="section-title">02 — Components & Utilities Library</h2>
+    <div class="comp-grid" style="width:1000px">
+      <div class="comp-tile">
+        <div class="search-row"><div class="search-input" style="flex:1;font-size:13px">Search a word…</div><div class="search-btn">🔍</div></div>
+        <div class="comp-name">SearchBar</div>
+      </div>
+      <div class="comp-tile">
+        <div class="hint" style="margin:0;font-size:12px">⚠️ Type a word to search</div>
+        <div class="comp-name">InlineHint</div>
+      </div>
+      <div class="comp-tile">
+        <div class="suggestions" style="margin:0"><div class="suggestion-item"><mark>app</mark>le</div><div class="suggestion-item"><mark>app</mark>ly</div></div>
+        <div class="comp-name">SearchSuggestions</div>
+      </div>
+      <div class="comp-tile">
+        <span class="pos-chip pos-noun">noun</span>
+        <span class="pos-chip pos-verb" style="margin-left:6px">verb</span>
+        <div class="comp-name">PartOfSpeechChip</div>
+      </div>
+      <div class="comp-tile">
+        <div class="audio-btn">▶ Play</div>
+        <div class="comp-name">AudioButton</div>
+      </div>
+      <div class="comp-tile">
+        <div class="loader-ring"></div>
+        <div class="comp-name">ApiLoadingIndicator</div>
+      </div>
+      <div class="comp-tile">
+        <div class="skeleton" style="width:80%"></div><div class="skeleton" style="width:60%"></div><div class="skeleton" style="width:90%"></div>
+        <div class="comp-name">Skeleton</div>
+      </div>
+      <div class="comp-tile">
+        <div class="stat-card" style="margin:0"><div class="stat-num">42</div><div class="stat-label">Searched</div></div>
+        <div class="comp-name">StatCard</div>
+      </div>
+      <div class="comp-tile">
+        <div class="list-item" style="margin:0;padding:10px"><div style="flex:1"><div class="list-word">eloquent</div><div class="list-sub">2h ago</div></div><span>🗑</span></div>
+        <div class="comp-name">WordListItem</div>
+      </div>
+      <div class="comp-tile">
+        <div class="empty" style="padding:20px"><div class="empty-icon">📭</div><div class="empty-title">No items</div></div>
+        <div class="comp-name">EmptyState</div>
+      </div>
+      <div class="comp-tile">
+        <div class="error-card" style="margin:0;padding:16px"><div class="error-icon" style="font-size:32px">📖</div><div style="font-weight:700">Word not found</div></div>
+        <div class="comp-name">ErrorState</div>
+      </div>
+      <div class="comp-tile">
+        <div class="toast" style="position:relative;top:0;left:0;right:0">⭐ Added to favorites</div>
+        <div class="comp-name">AnimatedToast</div>
+      </div>
+      <div class="comp-tile">
+        <div class="tab-bar" style="position:relative;bottom:0;transform:none;width:100%;margin-top:8px">
+          <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+        </div>
+        <div class="comp-name">FloatingTabBar</div>
+      </div>
+      <div class="comp-tile">
+        <div class="chip" style="display:inline-block">serendipity</div>
+        <div class="comp-name">BouncePressable chip</div>
+      </div>
+      <div class="comp-tile">
+        <div style="font-size:32px">✨🎉</div>
+        <div class="comp-name">CelebrationBurst</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREENS -->
+  <section class="section" id="screens">
+    <h2 class="section-title">03 — Screens (Light Theme)</h2>
+    <div class="frames-row">
+
+      <!-- Splash -->
+      <div class="frame-wrap">
+        <span class="frame-label">01-Splash</span>
+        <div class="phone gradient-brand-dark">
+          <div class="splash-center">
+            <div class="splash-logo">📚</div>
+            <div class="splash-title">LexiDict</div>
+            <div class="splash-bars"><div class="splash-bar"></div><div class="splash-bar"></div><div class="splash-bar"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Default -->
+      <div class="frame-wrap">
+        <span class="frame-label">02-Home-Default</span>
+        <div class="phone">
+          <div class="header gradient-brand">
+            <div class="icon-btn">☰</div>
+            <div style="font-size:20px">📚</div>
+            <h2>LexiDict</h2>
+          </div>
+          <div class="content">
+            <div class="greeting">Good morning ☀️</div>
+            <div class="greeting-sub">What would you like to look up?</div>
+            <div class="card">
+              <div class="search-row">
+                <input class="search-input" placeholder="Search a word…" readonly />
+                <div class="search-btn">🔍</div>
+              </div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">Searched</div></div>
+              <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Day streak</div></div>
+              <div class="stat-card"><div class="stat-num">5</div><div class="stat-label">Favorites</div></div>
+            </div>
+            <div class="card">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Word of the day</div>
+              <div style="font-size:18px;font-weight:700;color:var(--text)">serendipity</div>
+              <div style="font-size:13px;color:var(--subtext);margin-top:4px">The occurrence of events by chance in a happy way</div>
+            </div>
+            <div class="chip-row">
+              <span class="chip">eloquent</span><span class="chip">paradigm</span><span class="chip">ubiquitous</span>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Suggestions -->
+      <div class="frame-wrap">
+        <span class="frame-label">02-Home-Suggestions</span>
+        <div class="phone">
+          <div class="header gradient-brand">
+            <div class="icon-btn">☰</div><div style="font-size:20px">📚</div><h2>LexiDict</h2>
+          </div>
+          <div class="content">
+            <div class="card">
+              <div class="search-row">
+                <input class="search-input" value="app" readonly />
+                <div class="search-btn">🔍</div>
+              </div>
+              <div class="suggestions">
+                <div class="suggestion-item"><mark>app</mark>le</div>
+                <div class="suggestion-item"><mark>app</mark>ly</div>
+                <div class="suggestion-item"><mark>app</mark>roach</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Empty Hint -->
+      <div class="frame-wrap">
+        <span class="frame-label">02-Home-Empty-Hint</span>
+        <div class="phone">
+          <div class="header gradient-brand">
+            <div class="icon-btn">☰</div><div style="font-size:20px">📚</div><h2>LexiDict</h2>
+          </div>
+          <div class="content">
+            <div class="card">
+              <div class="search-row">
+                <input class="search-input" placeholder="Search a word…" readonly style="border-color:#F59E0B" />
+                <div class="search-btn">🔍</div>
+              </div>
+              <div class="hint">⚠️ Please type a word before searching</div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Word Detail Success -->
+      <div class="frame-wrap">
+        <span class="frame-label">03-WordDetail-Success</span>
+        <div class="phone">
+          <div class="header gradient-brand" style="padding-bottom:12px">
+            <div class="icon-btn">←</div>
+            <h2 style="font-size:18px">eloquent</h2>
+            <div class="icon-btn">⭐</div>
+          </div>
+          <div class="content">
+            <div class="word-title">eloquent</div>
+            <div class="phonetic">/ˈel.ə.kwənt/</div>
+            <div class="audio-btn">▶ Play pronunciation</div>
+            <div class="card" style="margin-top:16px">
+              <span class="pos-chip pos-adjective" style="background:#EDE9FE;color:#7C3AED">adjective</span>
+              <div style="margin-top:12px;font-size:15px;color:var(--text)"><span class="def-num">1.</span>Fluent or persuasive in speaking or writing</div>
+              <div class="example">"She gave an eloquent speech at the ceremony."</div>
+            </div>
+            <div class="card">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">SYNONYMS</div>
+              <div class="chip-row" style="margin:0"><span class="chip">articulate</span><span class="chip">fluent</span></div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Word Detail Loading -->
+      <div class="frame-wrap">
+        <span class="frame-label">03-WordDetail-Loading</span>
+        <div class="phone">
+          <div class="header gradient-brand">
+            <div class="icon-btn">←</div><h2 style="font-size:18px">Searching…</h2><div class="icon-btn">⭐</div>
+          </div>
+          <div class="content">
+            <div class="loader-wrap">
+              <div class="loader-ring"></div>
+              <div style="font-weight:700;color:var(--primary)">Looking up word…</div>
+            </div>
+            <div class="skeleton" style="width:60%;height:32px"></div>
+            <div class="skeleton" style="width:40%"></div>
+            <div class="card"><div class="skeleton" style="width:100%"></div><div class="skeleton" style="width:80%"></div><div class="skeleton" style="width:90%"></div></div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Word Detail Not Found -->
+      <div class="frame-wrap">
+        <span class="frame-label">03-WordDetail-NotFound</span>
+        <div class="phone">
+          <div class="header gradient-brand">
+            <div class="icon-btn">←</div><h2 style="font-size:18px">xyzabc</h2><div class="icon-btn">⭐</div>
+          </div>
+          <div class="content">
+            <div class="error-card">
+              <div class="error-icon">📖</div>
+              <div style="font-size:18px;font-weight:700;color:var(--text)">Word not found</div>
+              <div style="font-size:14px;color:var(--subtext);margin-top:8px">We couldn't find "xyzabc" in the dictionary.</div>
+              <div class="retry-btn">Try again</div>
+              <div class="chip-row" style="justify-content:center;margin-top:16px"><span class="chip">hello</span><span class="chip">world</span></div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- History List -->
+      <div class="frame-wrap">
+        <span class="frame-label">04-History-List</span>
+        <div class="phone">
+          <div class="header gradient-brand">
+            <div class="icon-btn">☰</div><h2>History</h2><div class="icon-btn">🗑</div>
+          </div>
+          <div class="content">
+            <div class="list-item"><div style="flex:1"><div class="list-word">eloquent</div><div class="list-sub">2 hours ago</div></div><span>🗑</span><span>›</span></div>
+            <div class="list-item"><div style="flex:1"><div class="list-word">serendipity</div><div class="list-sub">Yesterday</div></div><span>🗑</span><span>›</span></div>
+            <div class="list-item"><div style="flex:1"><div class="list-word">paradigm</div><div class="list-sub">3 days ago</div></div><span>🗑</span><span>›</span></div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item">🏠</span><span class="tab-item active">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Empty -->
+      <div class="frame-wrap">
+        <span class="frame-label">04-History-Empty</span>
+        <div class="phone">
+          <div class="header gradient-brand">
+            <div class="icon-btn">☰</div><h2>History</h2>
+          </div>
+          <div class="content">
+            <div class="empty">
+              <div class="empty-icon">🕐</div>
+              <div class="empty-title">No searches yet</div>
+              <div style="font-size:14px">Words you look up will appear here</div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item">🏠</span><span class="tab-item active">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Favorites List -->
+      <div class="frame-wrap">
+        <span class="frame-label">05-Favorites-List</span>
+        <div class="phone">
+          <div class="header gradient-brand">
+            <div class="icon-btn">☰</div><h2>Favorites</h2><div class="icon-btn">🗑</div>
+          </div>
+          <div class="content">
+            <div class="list-item"><div style="flex:1"><div class="list-word">eloquent ⭐</div><div class="list-sub">Fluent or persuasive in speaking</div></div><span>🗑</span><span>›</span></div>
+            <div class="list-item"><div style="flex:1"><div class="list-word">serendipity ⭐</div><div class="list-sub">Happy chance occurrence</div></div><span>🗑</span><span>›</span></div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item">🏠</span><span class="tab-item">🕐</span><span class="tab-item active">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Learn -->
+      <div class="frame-wrap">
+        <span class="frame-label">06-Learn</span>
+        <div class="phone">
+          <div class="header gradient-brand"><div class="icon-btn">☰</div><h2>Learn</h2></div>
+          <div class="content">
+            <div class="card gradient-brand" style="color:#fff;border:none">
+              <div style="font-size:18px;font-weight:700">Discover new words</div>
+              <div style="font-size:13px;opacity:0.9;margin-top:4px">Tap below for a random word</div>
+            </div>
+            <div class="card" style="text-align:center;padding:24px">
+              <div style="font-size:24px;font-weight:800;color:var(--primary)">ubiquitous</div>
+              <div style="font-size:13px;color:var(--subtext);margin-top:8px">Tap to look up →</div>
+            </div>
+            <div class="tip-card"><div class="tip-icon">🔍</div><div><div class="tip-title">Search tips</div><div class="tip-body">Try synonyms from word detail</div></div></div>
+            <div class="tip-card"><div class="tip-icon">🔊</div><div><div class="tip-title">Pronunciation</div><div class="tip-body">Tap play to hear native audio</div></div></div>
+            <div class="tip-card"><div class="tip-icon">⭐</div><div><div class="tip-title">Favorites</div><div class="tip-body">Star words to save them</div></div></div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item active">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="frame-wrap">
+        <span class="frame-label">07-Settings</span>
+        <div class="phone">
+          <div class="header gradient-brand"><div class="icon-btn">☰</div><h2>Settings</h2></div>
+          <div class="content">
+            <div class="card" style="text-align:center">
+              <div style="font-size:40px">📚</div>
+              <div style="font-weight:700;margin-top:8px">LexiDict</div>
+              <span class="badge">Light mode</span>
+            </div>
+            <div class="stat-row">
+              <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">Searched</div></div>
+              <div class="stat-card"><div class="stat-num">5</div><div class="stat-label">Saved</div></div>
+              <div class="stat-card"><div class="stat-num">3</div><div class="stat-label">Streak</div></div>
+            </div>
+            <div class="card">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">APPEARANCE</div>
+              <div class="settings-row"><span>System</span><span>○</span></div>
+              <div class="settings-row"><span style="color:var(--primary);font-weight:700">Light ✓</span><span>●</span></div>
+              <div class="settings-row"><span>Dark</span><span>○</span></div>
+            </div>
+            <div class="card">
+              <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">DATA</div>
+              <div class="settings-row"><span style="color:var(--danger)">Clear history</span><span>›</span></div>
+              <div class="settings-row"><span style="color:var(--danger)">Clear favorites</span><span>›</span></div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item active">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drawer -->
+      <div class="frame-wrap">
+        <span class="frame-label">08-Drawer-Open</span>
+        <div class="phone">
+          <div class="drawer-overlay">
+            <div class="drawer-panel">
+              <div class="drawer-hero gradient-brand">
+                <div style="font-size:32px">📚</div>
+                <div style="font-weight:800;font-size:18px;margin-top:8px">LexiTech Solutions</div>
+                <div style="font-size:13px;opacity:0.85">12 words · 3 day streak</div>
+              </div>
+              <div class="drawer-item active">🏠 Home</div>
+              <div class="drawer-item">🕐 History</div>
+              <div class="drawer-item">⭐ Favorites</div>
+              <div class="drawer-item">💡 Learn</div>
+              <div class="drawer-item">⚙️ Settings</div>
+              <div style="padding:16px 20px;font-size:11px;font-weight:700;color:var(--muted)">RECENT</div>
+              <div class="drawer-item" style="font-weight:400">eloquent</div>
+              <div class="drawer-item" style="font-weight:400">serendipity</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast on Word Detail -->
+      <div class="frame-wrap">
+        <span class="frame-label">10-Utilities-Toast</span>
+        <div class="phone">
+          <div class="toast">⭐ Added to favorites</div>
+          <div class="header gradient-brand" style="padding-top:100px">
+            <div class="icon-btn">←</div><h2 style="font-size:18px">eloquent</h2><div class="icon-btn">⭐</div>
+          </div>
+          <div class="content">
+            <div class="word-title">eloquent</div>
+            <div class="phonetic">/ˈel.ə.kwənt/</div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- DARK THEME SCREENS -->
+  <section class="section" id="screens-dark">
+    <h2 class="section-title">04 — Screens (Dark Theme)</h2>
+    <div class="frames-row">
+
+      <div class="frame-wrap">
+        <span class="frame-label">02-Home-Default-Dark</span>
+        <div class="phone dark">
+          <div class="header gradient-brand-dark">
+            <div class="icon-btn">☰</div><div style="font-size:20px">📚</div><h2>LexiDict</h2>
+          </div>
+          <div class="content">
+            <div class="greeting" style="color:var(--text-dark)">Good evening 🌙</div>
+            <div class="greeting-sub" style="color:var(--subtext-dark)">What would you like to look up?</div>
+            <div class="card">
+              <div class="search-row">
+                <input class="search-input" placeholder="Search a word…" readonly style="background:#1C2540;border-color:#23304D;color:#F1F5F9" />
+                <div class="search-btn">🔍</div>
+              </div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-card"><div class="stat-num" style="color:#6366F1">12</div><div class="stat-label" style="color:#94A3B8">Searched</div></div>
+              <div class="stat-card"><div class="stat-num" style="color:#6366F1">3</div><div class="stat-label" style="color:#94A3B8">Streak</div></div>
+              <div class="stat-card"><div class="stat-num" style="color:#6366F1">5</div><div class="stat-label" style="color:#94A3B8">Favorites</div></div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item active">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="frame-wrap">
+        <span class="frame-label">07-Settings-Dark</span>
+        <div class="phone dark">
+          <div class="header gradient-brand-dark"><div class="icon-btn">☰</div><h2>Settings</h2></div>
+          <div class="content">
+            <div class="card" style="text-align:center">
+              <div style="font-size:40px">📚</div>
+              <div style="font-weight:700;margin-top:8px;color:#F1F5F9">LexiDict</div>
+              <span class="badge" style="background:#1E2547;color:#22D3EE">Dark mode</span>
+            </div>
+            <div class="card">
+              <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:8px">APPEARANCE</div>
+              <div class="settings-row" style="border-color:#23304D"><span style="color:#94A3B8">System</span><span>○</span></div>
+              <div class="settings-row" style="border-color:#23304D"><span style="color:#94A3B8">Light</span><span>○</span></div>
+              <div class="settings-row" style="border-color:#23304D"><span style="color:#6366F1;font-weight:700">Dark ✓</span><span>●</span></div>
+            </div>
+          </div>
+          <div class="tab-bar">
+            <span class="tab-item">🏠</span><span class="tab-item">🕐</span><span class="tab-item">⭐</span><span class="tab-item">💡</span><span class="tab-item active">⚙️</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">05 — Code ↔ Figma Links</h2>
+    <div style="background:#141B2E;padding:24px;border-radius:16px;max-width:800px;font-size:14px;line-height:1.8;color:#94A3B8">
+      <p><strong style="color:#F1F5F9">Import:</strong> Plugins → html.to.design → import this file</p>
+      <p><strong style="color:#F1F5F9">Tokens:</strong> Plugins → Tokens Studio → load design-tokens.json</p>
+      <p><strong style="color:#F1F5F9">Your Figma URL:</strong> paste after import → assets/design/README.md</p>
+      <p><strong style="color:#F1F5F9">Code paths:</strong> src/screens/* · src/components/* · src/navigation/* · src/theme/themes.js</p>
+    </div>
+  </section>
+
+</body>
+</html>
