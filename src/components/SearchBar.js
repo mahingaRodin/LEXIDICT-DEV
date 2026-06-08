@@ -61,7 +61,7 @@ export default function SearchBar({
             hintVisible && styles.rowWarn,
           ]}
         >
-          <Ionicons name="search" size={20} color={hintVisible ? theme.colors.warning : theme.colors.muted} style={styles.icon} />
+          <Ionicons name="text-outline" size={20} color={hintVisible ? theme.colors.warning : theme.colors.muted} style={styles.icon} />
           <TextInput
             ref={inputRef}
             value={value}
@@ -93,7 +93,7 @@ export default function SearchBar({
             style={[styles.btnWrap, btnStyle]}
           >
             <LinearGradient colors={theme.gradient.cyan} style={styles.btn}>
-              <Ionicons name="arrow-forward" size={18} color="#fff" />
+              <Ionicons name="search-outline" size={18} color="#fff" />
             </LinearGradient>
           </AnimatedPressable>
         </View>
