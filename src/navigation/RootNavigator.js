@@ -1,11 +1,10 @@
 import React from 'react';
-import { Platform } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
 import CustomDrawerContent from './CustomDrawerContent';
+import FloatingTabBar from './FloatingTabBar';
 import HomeScreen from '../screens/HomeScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
@@ -18,42 +17,37 @@ const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
 
-const TAB_ICONS = {
-  Home: ['home', 'home-outline'],
-  History: ['time', 'time-outline'],
-  Favorites: ['star', 'star-outline'],
-  Learn: ['bulb', 'bulb-outline'],
-  Settings: ['settings', 'settings-outline'],
-};
+function createTabStack(MainScreen, mainName) {
+  return function TabStack() {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+        <Stack.Screen name={mainName} component={MainScreen} />
+        <Stack.Screen name="WordDetail" component={WordDetailScreen} />
+      </Stack.Navigator>
+    );
+  };
+}
+
+const HomeStack = createTabStack(HomeScreen, 'HomeMain');
+const HistoryStack = createTabStack(HistoryScreen, 'HistoryMain');
+const FavoritesStack = createTabStack(FavoritesScreen, 'FavoritesMain');
+const LearnStack = createTabStack(LearnScreen, 'LearnMain');
+const SettingsStack = createTabStack(SettingsScreen, 'SettingsMain');
 
 function TabNavigator() {
-  const { theme } = useTheme();
-
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      tabBar={(props) => <FloatingTabBar {...props} />}
+      screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.muted,
-        tabBarStyle: {
-          backgroundColor: theme.colors.tabBar,
-          borderTopColor: theme.colors.border,
-          height: Platform.OS === 'ios' ? 88 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        tabBarIcon: ({ focused, color, size }) => {
-          const pair = TAB_ICONS[route.name] || ['ellipse', 'ellipse-outline'];
-          return <Ionicons name={focused ? pair[0] : pair[1]} size={size} color={color} />;
-        },
-      })}
+        tabBarShowLabel: false,
+      }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="History" component={HistoryScreen} />
-      <Tab.Screen name="Favorites" component={FavoritesScreen} />
-      <Tab.Screen name="Learn" component={LearnScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Home" component={HomeStack} />
+      <Tab.Screen name="History" component={HistoryStack} />
+      <Tab.Screen name="Favorites" component={FavoritesStack} />
+      <Tab.Screen name="Learn" component={LearnStack} />
+      <Tab.Screen name="Settings" component={SettingsStack} />
     </Tab.Navigator>
   );
 }
@@ -94,14 +88,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer theme={navTheme}>
-      <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-        <Stack.Screen name="Main" component={DrawerNavigator} />
-        <Stack.Screen
-          name="WordDetail"
-          component={WordDetailScreen}
-          options={{ animation: 'slide_from_bottom' }}
-        />
-      </Stack.Navigator>
+      <DrawerNavigator />
     </NavigationContainer>
   );
 }

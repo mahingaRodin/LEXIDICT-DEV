@@ -22,13 +22,14 @@ import ErrorState from '../components/ErrorState';
 import FadeInView from '../components/FadeInView';
 import BouncePressable from '../components/BouncePressable';
 import PartOfSpeechChip from '../components/PartOfSpeechChip';
-import { WordDetailSkeleton } from '../components/Skeleton';
+import ApiLoadingIndicator from '../components/ApiLoadingIndicator';
 import CelebrationBurst from '../components/CelebrationBurst';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../theme/ThemeContext';
 import { useDictionarySearch } from '../hooks/useDictionarySearch';
 import { useToast } from '../hooks/useToast';
 import { ErrorKind } from '../api/dictionaryApi';
+import { tabBarBottomPadding } from '../navigation/FloatingTabBar';
 import { FALLBACK_SUGGESTIONS, capitalize } from '../utils/constants';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -56,7 +57,7 @@ export default function WordDetailScreen() {
     [addToHistory]
   );
 
-  const { data, error, isLoading, search } = useDictionarySearch({ onSuccess });
+  const { data, error, isLoading, search, query: loadingQuery } = useDictionarySearch({ onSuccess });
 
   useEffect(() => {
     if (activeWord) search(activeWord).catch(() => {});
@@ -136,18 +137,27 @@ export default function WordDetailScreen() {
 
       <CelebrationBurst trigger={celebrateKey} />
 
-      {isLoading && <WordDetailSkeleton />}
+      {isLoading && (
+        <View style={{ paddingBottom: tabBarBottomPadding(insets.bottom) }}>
+          <ApiLoadingIndicator query={loadingQuery || activeWord} />
+        </View>
+      )}
 
       {!isLoading && error && (
-        <ErrorState
-          error={error}
-          onRetry={handleRetry}
-          suggestions={error.kind === ErrorKind.NOT_FOUND ? FALLBACK_SUGGESTIONS : []}
-        />
+        <View style={{ paddingBottom: tabBarBottomPadding(insets.bottom) }}>
+          <ErrorState
+            error={error}
+            onRetry={handleRetry}
+            suggestions={error.kind === ErrorKind.NOT_FOUND ? FALLBACK_SUGGESTIONS : []}
+          />
+        </View>
       )}
 
       {!isLoading && data && (
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { paddingBottom: tabBarBottomPadding(insets.bottom) }]}
+          showsVerticalScrollIndicator={false}
+        >
           <FadeInView spring>
             <View style={styles.headRow}>
               <View style={{ flex: 1 }}>
@@ -249,7 +259,7 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700' },
-  scroll: { padding: 20, paddingBottom: 40 },
+  scroll: { padding: 20 },
   headRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   word: { fontSize: 40, fontWeight: '800', letterSpacing: -1 },
   phonetic: { fontSize: 17, marginTop: 4, fontStyle: 'italic' },

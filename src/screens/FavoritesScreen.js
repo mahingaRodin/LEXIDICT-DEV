@@ -8,6 +8,7 @@ import EmptyState from '../components/EmptyState';
 import WordListItem from '../components/WordListItem';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../theme/ThemeContext';
+import { tabBarBottomPadding } from '../navigation/FloatingTabBar';
 import { confirmClearAll, confirmDeleteWord } from '../utils/confirm';
 import { capitalize } from '../utils/constants';
 
@@ -67,7 +68,7 @@ export default function FavoritesScreen() {
         <FlatList
           data={favorites}
           keyExtractor={(item) => item.word}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: tabBarBottomPadding(insets.bottom) }]}
           renderItem={({ item }) => (
             <WordListItem
               word={item.word}

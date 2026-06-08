@@ -1,5 +1,6 @@
 import { useCallback, useReducer } from 'react';
 import { lookupWord, DictionaryError } from '../api/dictionaryApi';
+import { withMinimumLoading } from '../utils/loading';
 
 /**
  * Search state machine:
@@ -37,7 +38,7 @@ export function useDictionarySearch({ onSuccess } = {}) {
       const query = (rawWord ?? '').trim();
       dispatch({ type: 'SEARCH_START', query });
       try {
-        const data = await lookupWord(query);
+        const data = await withMinimumLoading(lookupWord(query));
         dispatch({ type: 'SEARCH_SUCCESS', data, query });
         onSuccess?.(data);
         return data;
@@ -46,6 +47,7 @@ export function useDictionarySearch({ onSuccess } = {}) {
           err instanceof DictionaryError
             ? { kind: err.kind, message: err.message, word: err.word }
             : { kind: 'UNKNOWN', message: 'An unexpected error occurred.', word: query };
+        await withMinimumLoading(Promise.resolve());
         dispatch({ type: 'SEARCH_ERROR', error, query });
         throw error;
       }

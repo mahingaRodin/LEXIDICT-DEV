@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -16,6 +17,7 @@ import BouncePressable from './BouncePressable';
 import ShakeView from './ShakeView';
 import { useTheme } from '../theme/ThemeContext';
 import { ErrorKind } from '../api/dictionaryApi';
+import { capitalize } from '../utils/constants';
 
 const ICONS = {
   [ErrorKind.NOT_FOUND]: 'book-outline',
@@ -73,16 +75,30 @@ function WobbleIcon({ name, color, bg }) {
 
 export default function ErrorState({ error, onRetry, suggestions = [] }) {
   const { theme } = useTheme();
-  const [shakeKey, setShakeKey] = React.useState(1);
+  const [shakeKey, setShakeKey] = useState(1);
+  const [iconShakeKey, setIconShakeKey] = useState(0);
+  const [messageKey, setMessageKey] = useState(0);
 
   useEffect(() => {
     setShakeKey((k) => k + 1);
+    setMessageKey((k) => k + 1);
   }, [error?.kind, error?.message]);
+
+  const handleTryAgain = useCallback(() => {
+    if (error?.kind === ErrorKind.NOT_FOUND) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      setIconShakeKey((k) => k + 1);
+      setMessageKey((k) => k + 1);
+      return;
+    }
+    onRetry?.();
+  }, [error?.kind, onRetry]);
 
   if (!error) return null;
 
   const icon = ICONS[error.kind] || ICONS.default;
   const emoji = EMOJI[error.kind] || EMOJI.default;
+  const isNotFound = error.kind === ErrorKind.NOT_FOUND;
   const title =
     error.kind === ErrorKind.NOT_FOUND
       ? 'Word not found'
@@ -91,23 +107,37 @@ export default function ErrorState({ error, onRetry, suggestions = [] }) {
         : error.kind === ErrorKind.EMPTY
           ? 'Nothing to search'
           : 'Something went wrong';
+  const reaffirmMessage = isNotFound
+    ? error.word
+      ? `"${capitalize(error.word)}" is not in the dictionary. Try a single word or pick a suggestion below.`
+      : 'This word is not in the dictionary. Try a single word or pick a suggestion below.'
+    : error.message;
 
   return (
     <FadeInView style={styles.wrap} from={28} spring>
       <ShakeView trigger={shakeKey}>
         <View style={[styles.card, { backgroundColor: theme.colors.card }, theme.shadow.card]}>
-          <WobbleIcon name={icon} color={theme.colors.danger} bg={theme.colors.dangerSoft} />
+          <ShakeView trigger={iconShakeKey}>
+            <WobbleIcon name={icon} color={theme.colors.danger} bg={theme.colors.dangerSoft} />
+          </ShakeView>
           <Text style={styles.emoji}>{emoji}</Text>
           <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
-          <FadeInView delay={120} from={12}>
-            <Text style={[styles.msg, { color: theme.colors.subtext }]}>{error.message}</Text>
+          <FadeInView key={`msg-${messageKey}`} delay={80} from={12} spring>
+            <View style={[styles.msgBox, { backgroundColor: theme.colors.dangerSoft }]}>
+              <Ionicons name="information-circle-outline" size={18} color={theme.colors.danger} />
+              <Text style={[styles.msg, { color: theme.colors.textSoft }]}>
+                {isNotFound ? reaffirmMessage : error.message}
+              </Text>
+            </View>
           </FadeInView>
           {onRetry && (
             <FadeInView delay={220}>
-              <BouncePressable onPress={() => onRetry()} style={styles.retryWrap}>
+              <BouncePressable onPress={handleTryAgain} style={styles.retryWrap}>
                 <LinearGradient colors={theme.gradient.cyan} style={styles.retry}>
-                  <Ionicons name="refresh" size={18} color="#fff" />
-                  <Text style={styles.retryText}>Try again</Text>
+                  <View style={styles.retryInner}>
+                    <Ionicons name="refresh" size={18} color="#fff" />
+                    <Text style={styles.retryText}>Try again</Text>
+                  </View>
                 </LinearGradient>
               </BouncePressable>
             </FadeInView>
@@ -150,17 +180,25 @@ const styles = StyleSheet.create({
   },
   emoji: { fontSize: 22, marginBottom: 8 },
   title: { fontSize: 22, fontWeight: '800', marginBottom: 8 },
-  msg: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
-  retryWrap: { marginTop: 22, width: '100%' },
-  retry: {
+  msgBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 14,
+    borderRadius: 14,
+    marginTop: 4,
+    width: '100%',
+  },
+  msg: { flex: 1, fontSize: 15, lineHeight: 22, marginLeft: 10 },
+  retryWrap: { marginTop: 22, width: '100%', alignSelf: 'stretch' },
+  retry: { borderRadius: 16, overflow: 'hidden', width: '100%' },
+  retryInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
     paddingVertical: 14,
-    borderRadius: 16,
+    paddingHorizontal: 24,
   },
-  retryText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 16, marginLeft: 8, includeFontPadding: false },
   suggest: { marginTop: 24, width: '100%' },
   suggestLabel: { fontSize: 12, fontWeight: '600', marginBottom: 10, textAlign: 'center' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8 },

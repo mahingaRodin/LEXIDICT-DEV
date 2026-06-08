@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FadeInView from '../components/FadeInView';
 import { useTheme } from '../theme/ThemeContext';
+import { tabBarBottomPadding } from '../navigation/FloatingTabBar';
 import { WORD_OF_THE_DAY_POOL } from '../utils/constants';
 
 const TIPS = [
@@ -49,7 +50,9 @@ export default function LearnScreen() {
         <View style={{ width: 26 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarBottomPadding(insets.bottom) }]}
+      >
         <FadeInView>
           <LinearGradient colors={theme.gradient.brand} style={styles.hero}>
             <Ionicons name="school" size={32} color="#fff" />
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   title: { fontSize: 22, fontWeight: '800' },
-  scroll: { padding: 20, paddingBottom: 40 },
+  scroll: { padding: 20 },
   hero: { borderRadius: 22, padding: 24, marginBottom: 16 },
   heroTitle: { color: '#fff', fontSize: 22, fontWeight: '800', marginTop: 12 },
   heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 14, marginTop: 8, lineHeight: 20 },

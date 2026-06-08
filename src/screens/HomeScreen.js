@@ -19,6 +19,7 @@ import FloatingEmoji from '../components/FloatingEmoji';
 import Logo from '../components/Logo';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../theme/ThemeContext';
+import { tabBarBottomPadding } from '../navigation/FloatingTabBar';
 import { greeting, SUGGESTED_WORDS, wordOfTheDay, capitalize } from '../utils/constants';
 import { getWordSuggestions } from '../utils/wordSuggestions';
 
@@ -47,6 +48,7 @@ export default function HomeScreen() {
       if (!w) return false;
       Keyboard.dismiss();
       setHintVisible(false);
+      setQuery('');
       navigation.navigate('WordDetail', { word: w });
       return true;
     },
@@ -72,7 +74,6 @@ export default function HomeScreen() {
 
   const handleSelectSuggestion = useCallback(
     (word) => {
-      setQuery(word);
       goSearch(word);
     },
     [goSearch]
@@ -99,7 +100,7 @@ export default function HomeScreen() {
       </LinearGradient>
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarBottomPadding(insets.bottom) }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
   menuBtn: { width: 40, alignItems: 'center' },
   headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   brand: { color: '#fff', fontSize: 20, fontWeight: '800' },
-  scroll: { padding: 20, paddingBottom: 40 },
+  scroll: { padding: 20 },
   greet: { fontSize: 28, fontWeight: '800' },
   greetSub: { fontSize: 15, marginTop: 6 },
   statsRow: { flexDirection: 'row', gap: 10, marginTop: 22 },
