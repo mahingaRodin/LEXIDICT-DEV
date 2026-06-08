@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -21,14 +21,24 @@ const STATE_LABEL = {
   [PlaybackState.ERROR]: 'Unavailable',
 };
 
-const MAIN_ICON = {
-  [PlaybackState.IDLE]: 'volume-high',
+const IONICON = {
   [PlaybackState.LOADING]: 'hourglass-outline',
   [PlaybackState.PLAYING]: 'pause',
   [PlaybackState.PAUSED]: 'play',
   [PlaybackState.FINISHED]: 'play',
-  [PlaybackState.ERROR]: 'volume-mute',
 };
+
+const VOICE_ICON = {
+  [PlaybackState.IDLE]: 'account-voice',
+  [PlaybackState.ERROR]: 'account-voice-off',
+};
+
+function resolveIcon(state, isLoading) {
+  if (isLoading) return null;
+  if (VOICE_ICON[state]) return { family: 'material', name: VOICE_ICON[state] };
+  if (IONICON[state]) return { family: 'ionicons', name: IONICON[state] };
+  return { family: 'material', name: 'account-voice' };
+}
 
 /**
  * Activity 3: play, pause, and stop pronunciation audio.
@@ -78,8 +88,10 @@ export default function AudioButton({ audios = [], size = 44 }) {
     setIndex((i) => (i + 1) % audios.length);
   };
 
-  const mainIcon = isLoading ? null : MAIN_ICON[state] || 'volume-high';
+  const icon = resolveIcon(state, isLoading);
   const statusLabel = STATE_LABEL[state] || 'Audio';
+  const iconSize = size * 0.45;
+  const iconColor = theme.colors.primary;
 
   return (
     <View style={styles.wrap}>
@@ -105,10 +117,12 @@ export default function AudioButton({ audios = [], size = 44 }) {
             ]}
             accessibilityLabel={`${statusLabel} pronunciation`}
           >
-            {isLoading ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
+            {!icon ? (
+              <ActivityIndicator size="small" color={iconColor} />
+            ) : icon.family === 'material' ? (
+              <MaterialCommunityIcons name={icon.name} size={iconSize} color={iconColor} />
             ) : (
-              <Ionicons name={mainIcon} size={size * 0.45} color={theme.colors.primary} />
+              <Ionicons name={icon.name} size={iconSize} color={iconColor} />
             )}
           </Pressable>
         </Animated.View>

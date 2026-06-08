@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FadeInView from '../components/FadeInView';
@@ -16,9 +16,10 @@ const TIPS = [
     body: 'Search any English word — we fetch definitions, examples, and pronunciation from the Free Dictionary API.',
   },
   {
-    icon: 'volume-high',
+    icon: 'account-voice',
+    iconFamily: 'material',
     title: 'Hear it',
-    body: 'Tap the speaker icon to hear pronunciation. Long-press to switch between available accents.',
+    body: 'Tap the voice icon to hear pronunciation. Long-press to switch between available accents.',
   },
   {
     icon: 'star',
@@ -86,7 +87,11 @@ export default function LearnScreen() {
           <FadeInView key={tip.title} delay={160 + i * 70}>
             <View style={[styles.tip, { backgroundColor: theme.colors.card }, theme.shadow.card]}>
               <View style={[styles.tipIcon, { backgroundColor: theme.colors.primarySoft }]}>
-                <Ionicons name={tip.icon} size={22} color={theme.colors.primary} />
+                {tip.iconFamily === 'material' ? (
+                  <MaterialCommunityIcons name={tip.icon} size={22} color={theme.colors.primary} />
+                ) : (
+                  <Ionicons name={tip.icon} size={22} color={theme.colors.primary} />
+                )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.tipTitle, { color: theme.colors.text }]}>{tip.title}</Text>
