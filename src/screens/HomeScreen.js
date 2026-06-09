@@ -24,6 +24,7 @@ import { greeting, SUGGESTED_WORDS, wordOfTheDay, capitalize } from '../utils/co
 import { getWordSuggestions } from '../utils/wordSuggestions';
 
 const EMPTY_HINT = 'Type a word first — the dictionary is listening! 👀';
+const INVALID_HINT = 'Letters only — numbers and symbols are not allowed.';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -33,6 +34,7 @@ export default function HomeScreen() {
   const [query, setQuery] = useState('');
   const [shakeKey, setShakeKey] = useState(0);
   const [hintVisible, setHintVisible] = useState(false);
+  const [hintKind, setHintKind] = useState('empty');
   const greet = greeting();
   const wotd = wordOfTheDay();
 
@@ -56,6 +58,13 @@ export default function HomeScreen() {
   );
 
   const handleEmptySubmit = useCallback(() => {
+    setHintKind('empty');
+    setShakeKey((k) => k + 1);
+    setHintVisible(true);
+  }, []);
+
+  const handleInvalidInput = useCallback(() => {
+    setHintKind('invalid');
     setShakeKey((k) => k + 1);
     setHintVisible(true);
   }, []);
@@ -119,8 +128,9 @@ export default function HomeScreen() {
             onChangeText={handleQueryChange}
             onSubmit={() => goSearch()}
             onEmptySubmit={handleEmptySubmit}
+            onInvalidInput={handleInvalidInput}
             shakeTrigger={shakeKey}
-            hintMessage={EMPTY_HINT}
+            hintMessage={hintKind === 'invalid' ? INVALID_HINT : EMPTY_HINT}
             hintVisible={hintVisible}
             suggestionsVisible={showSuggestions}
           />

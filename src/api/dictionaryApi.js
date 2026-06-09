@@ -40,6 +40,19 @@ export class DictionaryError extends Error {
   }
 }
 
+/** Allowed characters while typing in the search bar. */
+const SEARCH_INPUT_PATTERN = /[^A-Za-z\s'-]/g;
+
+/** Strip numbers and symbols from live search input. */
+export function sanitizeSearchInput(raw) {
+  return (raw ?? '').replace(SEARCH_INPUT_PATTERN, '');
+}
+
+/** True when raw input contains digits or other disallowed characters. */
+export function hasInvalidSearchInput(raw) {
+  return /[^A-Za-z\s'-]/.test(raw ?? '');
+}
+
 /** Client-side validation. Returns the cleaned word or throws DictionaryError. */
 export function validateWord(raw) {
   const word = (raw ?? '').trim();

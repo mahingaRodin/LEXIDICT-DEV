@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import ShakeView from './ShakeView';
 import InlineHint from './InlineHint';
+import { sanitizeSearchInput } from '../api/dictionaryApi';
 import { useTheme } from '../theme/ThemeContext';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -19,6 +20,7 @@ export default function SearchBar({
   onChangeText,
   onSubmit,
   onEmptySubmit,
+  onInvalidInput,
   placeholder = 'Search a word…',
   autoFocus = false,
   shakeTrigger = 0,
@@ -66,7 +68,12 @@ export default function SearchBar({
             ref={inputRef}
             value={value}
             onChangeText={(t) => {
-              onChangeText(t);
+              const sanitized = sanitizeSearchInput(t);
+              if (sanitized !== t) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                onInvalidInput?.();
+              }
+              onChangeText(sanitized);
             }}
             placeholder={placeholder}
             placeholderTextColor={theme.colors.muted}
