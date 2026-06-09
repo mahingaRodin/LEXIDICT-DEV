@@ -109,7 +109,7 @@ export default function ErrorState({ error, onRetry, suggestions = [] }) {
           : 'Something went wrong';
   const reaffirmMessage = isNotFound
     ? error.word
-      ? `"${capitalize(error.word)}" is not in the dictionary. Try a single word or pick a suggestion below.`
+      ? `"${capitalize(error.word)}" is not in the dictionary. Try another word or pick a suggestion below.`
       : 'This word is not in the dictionary. Try a single word or pick a suggestion below.'
     : error.message;
 
